@@ -1242,3 +1242,77 @@ footer a:hover {
   color: #34d399;
 }
 
+/* --- THEME SWITCHER & ACCENT COLOR VARIATIONS --- */
+
+.theme-switcher {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: 100px;
+  padding: 4px 10px;
+  align-items: center;
+  margin-right: 12px;
+}
+
+.theme-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  padding: 0;
+  position: relative;
+}
+
+.theme-dot:hover {
+  transform: scale(1.2);
+}
+
+.theme-dot.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 10px currentColor;
+  transform: scale(1.1);
+}
+
+/* Theme class overrides */
+
+/* Cyberpunk Teal (Default) */
+body.theme-cyan {
+  --hue-cyan: 188;
+}
+
+/* Industrial Amber */
+body.theme-amber {
+  --hue-cyan: 38;
+  --bg-main: 220, 20%, 3%;
+  --bg-card: 220, 15%, 8%;
+  --bg-card-hover: 220, 15%, 12%;
+  --bg-input: 220, 15%, 10%;
+  --border-glow: hsla(38, 90%, 50%, 0.15);
+  --border-focus: hsla(38, 90%, 50%, 0.45);
+}
+
+/* Forest Eco */
+body.theme-emerald {
+  --hue-cyan: 142;
+  --bg-main: 145, 30%, 3%;
+  --bg-card: 145, 20%, 8%;
+  --bg-card-hover: 145, 20%, 12%;
+  --bg-input: 145, 20%, 10%;
+  --border-glow: hsla(142, 90%, 50%, 0.15);
+  --border-focus: hsla(142, 90%, 50%, 0.45);
+}
+
+/* Fusion Purple */
+body.theme-synthwave {
+  --hue-cyan: 295;
+  --bg-main: 270, 45%, 3%;
+  --bg-card: 270, 30%, 8%;
+  --bg-card-hover: 270, 30%, 12%;
+  --bg-input: 270, 30%, 10%;
+  --border-glow: hsla(295, 90%, 50%, 0.15);
+  --border-focus: hsla(295, 90%, 50%, 0.45);
+}
+

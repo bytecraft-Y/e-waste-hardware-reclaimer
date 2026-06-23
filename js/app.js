@@ -642,6 +642,33 @@ document.addEventListener('DOMContentLoaded', () => {
     Utils.printReport(currentList, stats);
   });
 
+  // --- THEME SELECTOR ---
+  const themeDots = document.querySelectorAll('.theme-dot');
+  themeDots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      document.body.classList.remove('theme-cyan', 'theme-amber', 'theme-emerald', 'theme-synthwave');
+      themeDots.forEach(d => d.classList.remove('active'));
+      
+      const theme = dot.dataset.theme;
+      document.body.classList.add(`theme-${theme}`);
+      dot.classList.add('active');
+      
+      localStorage.setItem('reclaimer-theme', theme);
+    });
+  });
+
+  // Load saved theme preference
+  const savedTheme = localStorage.getItem('reclaimer-theme');
+  if (savedTheme) {
+    const activeDot = document.querySelector(`.theme-dot[data-theme="${savedTheme}"]`);
+    if (activeDot) {
+      document.body.classList.remove('theme-cyan', 'theme-amber', 'theme-emerald', 'theme-synthwave');
+      themeDots.forEach(d => d.classList.remove('active'));
+      document.body.classList.add(`theme-${savedTheme}`);
+      activeDot.classList.add('active');
+    }
+  }
+
   // Initial load run
   updateUI();
 });
