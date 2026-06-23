@@ -4,6 +4,81 @@
 class ComponentAnalyzer {
   constructor(database) {
     this.database = database || window.COMPONENT_DATABASE || [];
+    this.buildIndex();
+  }
+
+  // Build model token index from database
+  buildIndex() {
+    this.modelIndex = [];
+    for (const item of this.database) {
+      const modelTokens = [];
+      for (const alias of item.searchTokens) {
+        const tokens = this.extractModelTokens(alias);
+        for (const token of tokens) {
+          if (!modelTokens.includes(token)) {
+            modelTokens.push(token);
+          }
+        }
+      }
+      // Store the extracted model tokens on the item
+      item.modelTokens = modelTokens;
+      
+      if (modelTokens.length > 0) {
+        this.modelIndex.push({ item, modelTokens });
+      }
+    }
+  }
+
+  // Extract model/part number tokens (e.g. "lm358", "ne555", "7805", "cr2032")
+  extractModelTokens(str) {
+    if (!str) return [];
+    // Normalize spacing around letters/numbers, e.g. "nema 17" -> "nema17", "cr 2032" -> "cr2032"
+    // Only merge if the letters are 1-4 chars
+    let normalized = str.toLowerCase()
+      .replace(/\b([a-z]{1,4})\s+(\d+)\b/g, '$1$2')
+      .replace(/\b(\d+)\s+([a-z]{1,4})\b/g, '$1$2');
+    
+    // Split by spaces, hyphens, slashes, periods, commas, underscores
+    const words = normalized.split(/[\s_\-\/\.\,]+/);
+    const modelTokens = [];
+    for (const word of words) {
+      // A model token is:
+      // - mixed letters and digits (e.g. lm358, ne555, 1n4007)
+      // - OR 3 to 5 digits (e.g. 555, 7805, 2032)
+      if (/^[a-z]+\d+|\d+[a-z]+$/i.test(word) || /^\d{3,5}$/.test(word)) {
+        modelTokens.push(word);
+      }
+    }
+    return modelTokens;
+  }
+
+  // Match model tokens with tolerance for minor suffix variations (e.g. atmega328 vs atmega328p)
+  modelTokensMatch(t1, t2) {
+    if (t1 === t2) return true;
+    const clean = t => t.replace(/[^a-z0-9]/g, '');
+    const c1 = clean(t1);
+    const c2 = clean(t2);
+    if (c1 === c2) return true;
+    
+    // Suffix tolerance: if one starts with the other, and difference is <= 2 chars
+    if (c1.startsWith(c2) && c1.length - c2.length <= 2) return true;
+    if (c2.startsWith(c1) && c2.length - c1.length <= 2) return true;
+    
+    return false;
+  }
+
+  // Check if a model token is a generic spec rather than a unique part number
+  static isGenericSpec(token) {
+    // Check if it's a standard electrical unit rating, size, or package code
+    // Units: v, w, hz, mhz, khz, a, ma, f, uf, pf, nf, mm, ohm, r, k, m
+    if (/^\d+(v|w|hz|mhz|khz|a|ma|f|uf|pf|nf|mm|ohm|r|k|m)$/i.test(token)) {
+      return true;
+    }
+    // Common package codes
+    if (/^(0805|0603|1206|0402)$/.test(token)) {
+      return true;
+    }
+    return false;
   }
 
   // Calculate Levenshtein distance between two strings
@@ -49,10 +124,52 @@ class ComponentAnalyzer {
     const text = inputText.toLowerCase().trim();
     if (!text) return null;
 
+    // First, try Model/Part Number Token Matching (Highest Precision)
+    const inputModelTokens = this.extractModelTokens(text);
+    if (inputModelTokens.length > 0) {
+      let bestModelMatch = null;
+      let bestModelScore = 0;
+
+      for (const { item, modelTokens } of this.modelIndex) {
+        for (const dbToken of modelTokens) {
+          for (const inputToken of inputModelTokens) {
+            if (this.modelTokensMatch(inputToken, dbToken)) {
+              // Verify generic spec condition
+              if (ComponentAnalyzer.isGenericSpec(dbToken)) {
+                // Must also match another search token of the item
+                const otherTokens = item.searchTokens.filter(t => !t.includes(dbToken));
+                const matchesKeyword = otherTokens.some(alias => {
+                  const words = alias.split(/\s+/);
+                  return words.some(word => text.includes(word));
+                });
+                if (!matchesKeyword) {
+                  continue; // Reject this match as it's a generic spec without correct context
+                }
+              }
+
+              const score = (inputToken === dbToken) ? 1.0 : 0.95;
+              if (score > bestModelScore) {
+                bestModelScore = score;
+                bestModelMatch = item;
+              }
+            }
+          }
+        }
+      }
+
+      if (bestModelMatch) {
+        return {
+          item: { ...bestModelMatch },
+          score: bestModelScore,
+          matchType: 'exact'
+        };
+      }
+    }
+
     let bestMatch = null;
     let highestScore = 0;
 
-    // First, scan for exact or phrase substring matches
+    // Second, scan for exact or phrase substring matches
     for (const item of this.database) {
       for (const alias of item.searchTokens) {
         if (text === alias) {
@@ -220,19 +337,26 @@ class ComponentAnalyzer {
     let quantity = 1;
     let cleanText = lineText.trim();
 
-    // Check patterns like: 10x, 10 x, 10pcs, 10 pcs, Qty 10
-    const qtyRegexes = [
-      /^(?:qty:?\s*)?(\d+)\s*(?:pcs|x|pcs\s*of)?\s+/i, // prefix: 10x, 10 pcs, qty 10
-      /\s+(?:x\s*|qty:?\s*)?(\d+)(?:\s*pcs)?$/i       // suffix: x10, qty 10, 10pcs
-    ];
+    // Check patterns with high precision:
+    // Explicit quantity has x, pcs, or qty indicator. Implicit quantity is only 1-2 digits to avoid matching part numbers (e.g. 555, 0805, 7805)
+    const explicitPrefixMatch = cleanText.match(/^(?:qty:?\s*)?(\d+)\s*(?:pcs|x|pcs\s*of)\s+/i);
+    const implicitPrefixMatch = cleanText.match(/^(\d{1,2})\s+/);
+    
+    const explicitSuffixMatch = cleanText.match(/\s+(?:x\s*|qty:?\s*)(\d+)(?:\s*pcs)?$/i) || cleanText.match(/\s+(\d+)\s*pcs$/i);
+    const implicitSuffixMatch = cleanText.match(/\s+(\d{1,2})$/);
 
-    for (const regex of qtyRegexes) {
-      const match = cleanText.match(regex);
-      if (match) {
-        quantity = parseInt(match[1], 10);
-        cleanText = cleanText.replace(match[0], ' ').trim();
-        break;
-      }
+    if (explicitPrefixMatch) {
+      quantity = parseInt(explicitPrefixMatch[1], 10);
+      cleanText = cleanText.replace(explicitPrefixMatch[0], ' ').trim();
+    } else if (implicitPrefixMatch) {
+      quantity = parseInt(implicitPrefixMatch[1], 10);
+      cleanText = cleanText.replace(implicitPrefixMatch[0], ' ').trim();
+    } else if (explicitSuffixMatch) {
+      quantity = parseInt(explicitSuffixMatch[1], 10);
+      cleanText = cleanText.replace(explicitSuffixMatch[0], ' ').trim();
+    } else if (implicitSuffixMatch) {
+      quantity = parseInt(implicitSuffixMatch[1], 10);
+      cleanText = cleanText.replace(implicitSuffixMatch[0], ' ').trim();
     }
 
     // Clean multiple spaces

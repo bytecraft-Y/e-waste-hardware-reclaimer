@@ -146,19 +146,37 @@ document.addEventListener('DOMContentLoaded', () => {
     quickPickContainer.appendChild(chip);
   });
 
+  // Helper to normalize strings for matching (removes spacing variations)
+  const normalizeString = (str) => {
+    if (!str) return '';
+    return str.toLowerCase()
+      .replace(/\b([a-z]{1,4})\s+(\d+)\b/g, '$1$2')
+      .replace(/\b(\d+)\s+([a-z]{1,4})\b/g, '$1$2')
+      .trim();
+  };
+
   // --- AUTOCOMPLETE SEARCH DROPDOWN ---
   searchInput.addEventListener('input', () => {
-    const query = searchInput.value.toLowerCase().trim();
-    if (!query) {
+    const rawQuery = searchInput.value.trim();
+    if (!rawQuery) {
       suggestionsDropdown.style.display = 'none';
       return;
     }
 
+    const query = rawQuery.toLowerCase();
+    const normalizedQuery = normalizeString(rawQuery);
+
     // Filter database for suggestions matching the query
     const matches = database.filter(item => {
-      return item.names.some(alias => alias.includes(query)) ||
-             item.subcategory.includes(query) ||
-             item.category.includes(query);
+      const nameMatch = item.names.some(alias => {
+        const normAlias = normalizeString(alias);
+        return alias.toLowerCase().includes(query) || 
+               normAlias.includes(normalizedQuery);
+      });
+      
+      return nameMatch ||
+             item.subcategory.toLowerCase().includes(query) ||
+             item.category.toLowerCase().includes(query);
     }).slice(0, 5); // Limit to top 5 suggestions
 
     if (matches.length === 0) {

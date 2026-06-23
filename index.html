@@ -6,6 +6,7 @@
   <meta name="description" content="E-Waste Hardware Reclaimer - Electronics Salvage Assistant. Intelligently scan and categorize circuit board components to identify salvageable items, standard recyclables, and toxic hazards.">
   <title>E-Waste Hardware Reclaimer - Electronics Salvage Assistant</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/three-d.css">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 </head>
 <body>
@@ -23,6 +24,16 @@
           <h1>E-Waste Hardware Reclaimer</h1>
           <p>Electronics Salvage & Reclaim Assistant — Track: Agents for Good</p>
         </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-ghost-danger" id="btn-reset" disabled>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          Clear All
+        </button>
+        <button class="btn-export" id="btn-export" disabled>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          Export Report
+        </button>
       </div>
     </header>
 
@@ -42,23 +53,14 @@
 
         <!-- Single Component Search -->
         <div class="input-pane active" id="pane-single">
-          <div class="search-wrapper">
-            <svg class="search-icon-svg" viewBox="0 0 24 24">
-              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-            </svg>
-            <input type="text" id="search-input" class="search-input" placeholder="Type component name (e.g. electrolytic capacitor, 555 timer, mosfet...)" autocomplete="off">
-            <div id="suggestions-dropdown" class="suggestions-dropdown"></div>
-          </div>
-          
-          <div class="row-inline">
-            <div style="flex-grow: 1;">
-              <label for="single-qty" style="display:none">Quantity</label>
-              <input type="number" id="single-qty" class="search-input" value="1" min="1" placeholder="Qty" style="padding-left: 16px;">
-            </div>
-            <button class="btn-primary" id="add-single-btn" style="flex-grow: 3;">
-              <svg viewBox="0 0 24 24" style="fill:#fff; width:18px; height:18px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          <div class="input-row-flex">
+            <input type="text" id="search-input" class="search-input input-search-main" placeholder="Type component name (e.g. electrolytic capacitor, 555 timer, mosfet...)" autocomplete="off">
+            <input type="number" id="single-qty" class="search-input input-qty" value="1" min="1" placeholder="Qty">
+            <button class="btn-primary" id="add-single-btn">
+              <svg viewBox="0 0 24 24" style="fill:#fff; width:16px; height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
               Add Component
             </button>
+            <div id="suggestions-dropdown" class="suggestions-dropdown"></div>
           </div>
 
           <div style="margin-top: 20px;">
@@ -102,11 +104,6 @@
             <strong>Desoldering Pro Tip:</strong>
             <p style="font-size: 12px; color: var(--text-muted);">For through-hole parts (resistors, DIP chips), use a solder vacuum pump or copper solder wick. For small SMD components, a hot air rework nozzle makes salvage quick and prevents pads from tearing.</p>
           </div>
-        </div>
-
-        <div class="footer-buttons">
-          <button class="btn-secondary" id="btn-reset" disabled>Clear All</button>
-          <button class="btn-primary" id="btn-export" disabled>Export Report</button>
         </div>
       </section>
     </div>
@@ -176,9 +173,9 @@
     </main>
 
     <!-- Green DIY Project Sandbox -->
-    <section class="glass-panel" style="margin-top: 32px;" id="sandbox-section">
+    <section class="glass-panel sandbox-panel" id="sandbox-section">
       <div class="panel-title" style="margin-bottom: 8px;">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M22 9V7h-2V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2v-2h-2V9h2zm-4 10H4V5h14v14zM6 13h5v4H6v-4zm6-6h4v3h-4V7zM6 7h5v5H6V7zm6 4h4v6h-4v-6z"/></svg>
         <h3>🛠️ Green DIY Project Sandbox</h3>
       </div>
       <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 20px;">
@@ -212,5 +209,6 @@
   <script src="js/analyzer.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/three-d.js"></script>
 </body>
 </html>

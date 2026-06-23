@@ -928,6 +928,7 @@ const PREPARED_DATABASE = COMPONENT_DATABASE.map(item => {
   // Normalize search tokens
   const searchTokens = item.names.map(n => n.toLowerCase());
   return {
+    name: item.names[0],
     ...item,
     searchTokens
   };
