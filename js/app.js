@@ -669,6 +669,224 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- ECO-HARDWARE SUSTAINABILITY AGENT LOGIC ---
+  const agentChatTrigger = document.getElementById('agent-chat-trigger');
+  const agentChatCard = document.getElementById('agent-chat-card');
+  const agentMinimizeBtn = document.getElementById('agent-btn-minimize');
+  const agentSetupPane = document.getElementById('agent-setup-pane');
+  const agentChatBody = document.getElementById('agent-chat-body');
+  const agentCardFooter = document.getElementById('agent-card-footer');
+  const agentApiKeyInput = document.getElementById('agent-api-key');
+  const agentSaveKeyBtn = document.getElementById('btn-save-key');
+  const agentMessagesLog = document.getElementById('agent-messages-log');
+  const agentInputText = document.getElementById('agent-input-text');
+  const agentSendBtn = document.getElementById('btn-send-agent');
+  const agentTriggerBadge = document.getElementById('agent-trigger-badge');
+
+  let agentChatHistory = [];
+  let agentApiKey = localStorage.getItem('gemini-api-key') || '';
+
+  // Initialize UI state based on saved API key
+  if (agentApiKey) {
+    agentSetupPane.style.display = 'none';
+    agentChatBody.style.display = 'flex';
+    agentCardFooter.style.display = 'flex';
+  }
+
+  // Toggle chat card
+  agentChatTrigger.addEventListener('click', () => {
+    agentChatCard.classList.toggle('open');
+    if (agentChatCard.classList.contains('open')) {
+      agentTriggerBadge.style.display = 'none';
+      if (agentApiKey) {
+        agentInputText.focus();
+      } else {
+        agentApiKeyInput.focus();
+      }
+    }
+  });
+
+  agentMinimizeBtn.addEventListener('click', () => {
+    agentChatCard.classList.remove('open');
+  });
+
+  // Save API Key
+  agentSaveKeyBtn.addEventListener('click', () => {
+    const key = agentApiKeyInput.value.trim();
+    if (!key) {
+      alert("Please enter a valid Gemini API Key.");
+      return;
+    }
+    agentApiKey = key;
+    localStorage.setItem('gemini-api-key', key);
+    agentSetupPane.style.display = 'none';
+    agentChatBody.style.display = 'flex';
+    agentCardFooter.style.display = 'flex';
+    agentInputText.focus();
+  });
+
+  // Simple Markdown Parser
+  const parseMarkdown = (text) => {
+    let escaped = Utils.escapeHtml(text);
+    
+    // Bold: **text**
+    escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Inline code: `code`
+    escaped = escaped.replace(/`(.*?)`/g, '<code>$1</code>');
+    
+    // Split by lines to parse lists and paragraphs
+    const lines = escaped.split('\n');
+    let inList = false;
+    let resultLines = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i].trim();
+      if (line.startsWith('- ') || line.startsWith('* ')) {
+        if (!inList) {
+          resultLines.push('<ul>');
+          inList = true;
+        }
+        resultLines.push(`<li>${line.substring(2)}</li>`);
+      } else {
+        if (inList) {
+          resultLines.push('</ul>');
+          inList = false;
+        }
+        if (line) {
+          resultLines.push(`<p>${line}</p>`);
+        }
+      }
+    }
+    if (inList) {
+      resultLines.push('</ul>');
+    }
+    
+    return resultLines.join('\n');
+  };
+
+  // Add Message to Log
+  const addAgentMessage = (content, role) => {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `agent-msg msg-${role === 'user' ? 'user' : 'assistant'}`;
+    
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.className = 'msg-bubble';
+    bubbleDiv.innerHTML = role === 'user' ? Utils.escapeHtml(content) : parseMarkdown(content);
+    
+    msgDiv.appendChild(bubbleDiv);
+    agentMessagesLog.appendChild(msgDiv);
+    agentMessagesLog.scrollTop = agentMessagesLog.scrollHeight;
+  };
+
+  // Get System Instructions
+  const getSystemInstructions = () => {
+    const inventorySummary = currentList.map(item => 
+      `- ${item.quantity}x ${item.component.name} (Subcategory: ${item.component.subcategory}, Package: ${item.component.package}, Classification: ${item.component.classification})`
+    ).join('\n') || 'None';
+
+    return `You are the Eco-Hardware Sustainability Agent, a specialist in hardware salvage and sustainable engineering.
+Your goal is to analyze electronic components and schematics from discarded electronics and recommend which components can be safely desoldered and reused for new custom hardware projects.
+You have real-time awareness of the user's current inventory of salvaged components:
+---
+${inventorySummary}
+---
+When the user asks for project ideas, suggest creative projects they can build with their parts.
+If the user asks about safety, warn them about toxic elements (lead, beryllium, cadmium, mercury, PCBs) or physical damage (bulging, leaking cells).
+Give practical desoldering advice (heatsinking, solder-wick vs pump).
+Answer in concise, clear paragraphs. Format responses in clean Markdown.`;
+  };
+
+  // Send message to Gemini API
+  const sendAgentMessage = async () => {
+    const text = agentInputText.value.trim();
+    if (!text) return;
+
+    // Clear input
+    agentInputText.value = '';
+    agentInputText.style.height = '38px';
+
+    // Add user message to log and history
+    addAgentMessage(text, 'user');
+    agentChatHistory.push({ role: 'user', parts: [{ text: text }] });
+
+    // Show typing indicator
+    const typingIndicator = document.createElement('div');
+    typingIndicator.className = 'agent-msg msg-assistant';
+    typingIndicator.id = 'agent-typing-indicator';
+    typingIndicator.innerHTML = `
+      <div class="msg-bubble typing-indicator">
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+      </div>
+    `;
+    agentMessagesLog.appendChild(typingIndicator);
+    agentMessagesLog.scrollTop = agentMessagesLog.scrollHeight;
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${agentApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: agentChatHistory,
+          systemInstruction: {
+            parts: [{ text: getSystemInstructions() }]
+          }
+        })
+      });
+
+      // Remove typing indicator
+      const indicator = document.getElementById('agent-typing-indicator');
+      if (indicator) indicator.remove();
+
+      if (!response.ok) {
+        throw new Error(`API returned status ${response.status}`);
+      }
+
+      const data = await response.ok ? await response.json() : null;
+      const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't understand that.";
+      
+      // Add assistant response to log and history
+      addAgentMessage(replyText, 'model');
+      agentChatHistory.push({ role: 'model', parts: [{ text: replyText }] });
+
+    } catch (error) {
+      // Remove typing indicator
+      const indicator = document.getElementById('agent-typing-indicator');
+      if (indicator) indicator.remove();
+
+      addAgentMessage(`Error calling Gemini API: ${error.message}. Please verify your API Key and connection.`, 'model');
+    }
+  };
+
+  // Button Click / Enter Key Bindings
+  agentSendBtn.addEventListener('click', sendAgentMessage);
+  
+  agentInputText.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendAgentMessage();
+    }
+  });
+
+  // Dynamic textarea height
+  agentInputText.addEventListener('input', () => {
+    agentInputText.style.height = 'auto';
+    agentInputText.style.height = `${Math.min(agentInputText.scrollHeight, 100)}px`;
+  });
+
+  // Quick Action Chips
+  document.querySelectorAll('.quick-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const query = chip.dataset.query;
+      agentInputText.value = query;
+      sendAgentMessage();
+    });
+  });
+
   // Initial load run
   updateUI();
 });

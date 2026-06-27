@@ -210,6 +210,74 @@
     </div>
   </aside>
 
+  <!-- Floating Eco-Hardware Sustainability Agent Chat Widget -->
+  <div class="agent-chat-container" id="agent-chat-container">
+    <!-- Floating Trigger Bubble -->
+    <button class="agent-chat-trigger" id="agent-chat-trigger" aria-label="Open Sustainability Agent Chat">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+      </svg>
+      <span class="agent-trigger-badge" id="agent-trigger-badge" style="display: none;">1</span>
+    </button>
+
+    <!-- Chat Card Window -->
+    <div class="agent-chat-card" id="agent-chat-card">
+      <div class="agent-card-header">
+        <div class="agent-header-info">
+          <div class="agent-avatar">🤖</div>
+          <div>
+            <h4 class="agent-title">Sustainability Agent</h4>
+            <span class="agent-status">Online • Eco-Engineer</span>
+          </div>
+        </div>
+        <div class="agent-header-actions">
+          <button class="agent-btn-minimize" id="agent-btn-minimize" title="Minimize chat">&minus;</button>
+        </div>
+      </div>
+
+      <!-- API Key Setup Pane -->
+      <div class="agent-setup-pane" id="agent-setup-pane">
+        <p class="setup-text">To unlock AI suggestions, enter your Gemini API Key. It is stored securely in your local browser session.</p>
+        <div class="setup-input-group">
+          <input type="password" id="agent-api-key" class="setup-input" placeholder="Enter Gemini API Key (AIzaSy...)">
+          <button class="btn-primary" id="btn-save-key">Unlock AI</button>
+        </div>
+        <p class="setup-footer">Don't have a key? Get one on <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a>.</p>
+      </div>
+
+      <!-- Chat Messages Area (Hidden by default, shown when key is entered) -->
+      <div class="agent-chat-body" id="agent-chat-body" style="display: none;">
+        <div class="agent-messages-log" id="agent-messages-log">
+          <!-- Initial Greeting -->
+          <div class="agent-msg msg-assistant">
+            <div class="msg-bubble">
+              Hello! I am your **Eco-Hardware Sustainability Agent**.
+              
+              Analyze some board parts above or paste a schematic directly in our chat, and I can suggest which components are safe to harvest, highlight toxic hazards, and recommend DIY projects you can build!
+            </div>
+          </div>
+        </div>
+        
+        <!-- Quick Action Suggestion Chips -->
+        <div class="agent-quick-chips">
+          <button class="quick-chip" data-query="Suggest projects I can build with my current inventory">🛠️ Project Ideas</button>
+          <button class="quick-chip" data-query="Is there any hazard in standard PCBs?">⚠️ PCB Hazards</button>
+          <button class="quick-chip" data-query="Give me tips for desoldering sensitive SMD ICs">🔌 Desolder SMD</button>
+        </div>
+      </div>
+
+      <!-- Footer Input Area -->
+      <div class="agent-card-footer" id="agent-card-footer" style="display: none;">
+        <textarea id="agent-input-text" class="agent-input-text" placeholder="Type a message or paste a schematic..."></textarea>
+        <button class="btn-send-agent" id="btn-send-agent" title="Send message">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Script Imports -->
   <script src="js/database.js"></script>
   <script src="js/analyzer.js"></script>
