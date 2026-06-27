@@ -32,6 +32,10 @@
           <button class="theme-dot" data-theme="emerald" title="Forest Eco" style="background: #10b981; color: #10b981;"></button>
           <button class="theme-dot" data-theme="synthwave" title="Fusion Purple" style="background: #d946ef; color: #d946ef;"></button>
         </div>
+        <button class="btn-inventory" id="btn-view-inventory" disabled>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M4 14h6v-4H4v4zm0 5h6v-4H4v4zM4 9h6V5H4v4zm7 5h9v-4h-9v4zm0 5h9v-4h-9v4zM11 5v4h9V5h-9z"/></svg>
+          View Inventory
+        </button>
         <button class="btn-ghost-danger" id="btn-reset" disabled>
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
           Clear All
@@ -277,6 +281,54 @@
       </div>
     </div>
   </div>
+
+  <!-- Detailed Inventory List Modal Overlay -->
+  <div class="modal-backdrop" id="inventory-modal-backdrop"></div>
+  <dialog class="inventory-modal" id="inventory-modal" aria-label="Detailed Component Inventory">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M4 14h6v-4H4v4zm0 5h6v-4H4v4zM4 9h6V5H4v4zm7 5h9v-4h-9v4zm0 5h9v-4h-9v4zM11 5v4h9V5h-9z"/>
+        </svg>
+        <h3>Detailed Component Inventory</h3>
+      </div>
+      <button class="modal-close" id="inventory-modal-close" aria-label="Close inventory">&times;</button>
+    </div>
+    
+    <div class="modal-search-bar">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+      </svg>
+      <input type="text" id="inventory-search-input" class="search-input" placeholder="Search inventory by name, category, or classification..." autocomplete="off">
+    </div>
+
+    <div class="modal-body">
+      <div class="table-responsive">
+        <table class="inventory-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">Qty</th>
+              <th>Component</th>
+              <th>Category</th>
+              <th>Package</th>
+              <th>Classification</th>
+              <th style="text-align: right;">Est. Value</th>
+              <th style="width: 80px; text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-table-body">
+            <!-- Populated dynamically by app.js -->
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-empty-state" id="modal-empty-state" style="display: none;">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        </svg>
+        <p>Your inventory is empty. Add components to list them here.</p>
+      </div>
+    </div>
+  </dialog>
 
   <!-- Script Imports -->
   <script src="js/database.js"></script>

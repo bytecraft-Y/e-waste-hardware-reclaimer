@@ -1708,4 +1708,355 @@ body.theme-synthwave {
   40% { transform: scale(1); }
 }
 
+/* --- DETAILED INVENTORY MODAL & TABLE STYLES --- */
+
+/* View Inventory button in header */
+.btn-inventory {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 8px 16px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-inventory:hover:not(:disabled) {
+  color: var(--color-cyan);
+  border-color: hsla(var(--hue-cyan), 90%, 50%, 0.35);
+  background: hsla(var(--hue-cyan), 90%, 50%, 0.06);
+}
+
+.btn-inventory svg {
+  transition: transform 0.25s ease;
+}
+
+.btn-inventory:hover:not(:disabled) svg {
+  transform: scale(1.08);
+}
+
+/* Modal Overlay Backdrop */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(5, 11, 20, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 1100;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.modal-backdrop.active {
+  display: block;
+  opacity: 1;
+}
+
+/* Modal Dialog Card */
+.inventory-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -46%) scale(0.96);
+  width: 90%;
+  max-width: 820px;
+  height: auto;
+  max-height: 80vh;
+  background: hsla(var(--bg-card), 0.96);
+  border: 1px solid var(--border-glow);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-main), 0 0 60px rgba(0, 0, 0, 0.5);
+  z-index: 1200;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+  color: var(--text-primary);
+}
+
+.inventory-modal.open {
+  display: flex;
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+.modal-header {
+  padding: 18px 24px;
+  background: rgba(255, 255, 255, 0.01);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-cyan);
+}
+
+.modal-title-group h3 {
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 26px;
+  font-weight: 300;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  transition: var(--transition-smooth);
+}
+
+.modal-close:hover {
+  color: var(--color-hazard);
+}
+
+/* Modal Search Bar */
+.modal-search-bar {
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.modal-search-bar svg {
+  position: absolute;
+  left: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  fill: var(--text-muted);
+  pointer-events: none;
+}
+
+.modal-search-bar .search-input {
+  padding-left: 38px;
+}
+
+/* Modal Body / Scroll area */
+.modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex-grow: 1;
+  min-height: 300px;
+}
+
+/* Structured Inventory Table */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.inventory-table th {
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  padding: 12px 14px;
+  border-bottom: 2px solid var(--border-subtle);
+}
+
+.inventory-table td {
+  padding: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  vertical-align: middle;
+}
+
+.inventory-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* Status badging in table */
+.table-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+}
+
+.table-badge-salvage {
+  background: hsla(var(--hue-salvage), 72%, 45%, 0.08);
+  border: 1px solid hsla(var(--hue-salvage), 72%, 45%, 0.25);
+  color: var(--color-salvage);
+}
+
+.table-badge-recycle {
+  background: hsla(var(--hue-recycle), 91%, 60%, 0.08);
+  border: 1px solid hsla(var(--hue-recycle), 91%, 60%, 0.25);
+  color: var(--color-recycle);
+}
+
+.table-badge-hazard {
+  background: hsla(var(--hue-hazard), 85%, 57%, 0.08);
+  border: 1px solid hsla(var(--hue-hazard), 85%, 57%, 0.25);
+  color: var(--color-hazard);
+}
+
+/* Row Action Buttons */
+.btn-table-delete {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.btn-table-delete:hover {
+  color: var(--color-hazard);
+  border-color: hsla(var(--hue-hazard), 85%, 57%, 0.25);
+  background: hsla(var(--hue-hazard), 85%, 57%, 0.06);
+}
+
+/* Modal Empty State */
+.modal-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  gap: 16px;
+}
+
+.modal-empty-state svg {
+  opacity: 0.2;
+  fill: var(--text-muted);
+}
+
+.modal-empty-state p {
+  font-size: 12px;
+}
+
+/* --- COMPACT CATEGORY SUMMARY CARDS (Dashboard columns) --- */
+
+.category-summary-card {
+  background: rgba(10, 14, 26, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: var(--transition-smooth);
+  min-height: 220px;
+}
+
+.salvageable-hdr ~ .card-list .category-summary-card:hover { border-color: var(--color-salvage-glow); box-shadow: 0 6px 20px var(--color-salvage-dim); }
+.recyclable-hdr ~ .card-list .category-summary-card:hover { border-color: var(--color-recycle-glow); box-shadow: 0 6px 20px var(--color-recycle-dim); }
+.hazardous-hdr ~ .card-list .category-summary-card:hover { border-color: var(--color-hazard-glow); box-shadow: 0 6px 20px var(--color-hazard-dim); }
+
+.summary-preview-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.summary-preview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-secondary);
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.02);
+  padding-bottom: 6px;
+}
+
+.summary-preview-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.summary-preview-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+  cursor: pointer;
+}
+
+.summary-preview-name:hover {
+  color: var(--color-cyan);
+}
+
+.summary-preview-qty {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.summary-metrics-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-top: 4px;
+}
+
+.btn-card-action {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition-smooth);
+  margin-top: auto;
+}
+
+.btn-card-action:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+
 

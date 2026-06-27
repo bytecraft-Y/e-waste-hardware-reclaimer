@@ -113,6 +113,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExport = document.getElementById('btn-export');
   const recipesGrid = document.getElementById('recipes-grid');
 
+  // DOM Elements - Inventory Modal
+  const btnViewInventory = document.getElementById('btn-view-inventory');
+  const inventoryModal = document.getElementById('inventory-modal');
+  const inventoryModalBackdrop = document.getElementById('inventory-modal-backdrop');
+  const inventoryModalClose = document.getElementById('inventory-modal-close');
+  const inventorySearchInput = document.getElementById('inventory-search-input');
+  const inventoryTableBody = document.getElementById('inventory-table-body');
+  const modalEmptyState = document.getElementById('modal-empty-state');
+
   // --- TAB NAVIGATION ---
   tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -355,9 +364,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentList.length > 0) {
       btnReset.removeAttribute('disabled');
       btnExport.removeAttribute('disabled');
+      btnViewInventory.removeAttribute('disabled');
     } else {
       btnReset.setAttribute('disabled', 'true');
       btnExport.setAttribute('disabled', 'true');
+      btnViewInventory.setAttribute('disabled', 'true');
+      closeInventoryModal();
     }
 
     // Live update Project Sandbox
@@ -478,40 +490,152 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    list.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'component-card';
-      
-      const valText = item.component.estimatedValue > 0 
-        ? Utils.formatCurrency(item.component.estimatedValue * item.quantity) 
-        : 'Disposal Cost';
+    // Calculate aggregated metrics for this column
+    const totalQty = list.reduce((sum, item) => sum + item.quantity, 0);
+    const totalWeight = list.reduce((sum, item) => sum + (ComponentAnalyzer.getComponentWeight(item.component.category, item.component.subcategory) * item.quantity), 0);
+    const totalVal = list.reduce((sum, item) => sum + (item.component.estimatedValue * item.quantity), 0);
 
-      card.innerHTML = `
-        <div class="card-top">
-          <span class="card-qty">${item.quantity}x</span>
-          <button class="card-remove" title="Remove element" data-index="${item.originalIndex}">&times;</button>
-        </div>
-        <div class="card-name">${Utils.escapeHtml(item.component.name)}</div>
-        <div class="card-desc">${Utils.escapeHtml(item.component.subcategory)} &bull; ${Utils.escapeHtml(item.component.package)}</div>
-        <div class="card-bottom">
-          <span class="card-badge">Diff: ${item.component.desolderDifficulty}/5</span>
-          <span class="card-val">${valText}</span>
-        </div>
-      `;
+    // Get top 3 items for preview
+    const sortedList = [...list].sort((a, b) => b.quantity - a.quantity);
+    const previewItems = sortedList.slice(0, 3);
 
-      // Prevent detail modal opening if clicking the remove button
-      card.querySelector('.card-remove').addEventListener('click', (e) => {
+    const previewListHtml = previewItems.map(item => `
+      <li class="summary-preview-item">
+        <span class="summary-preview-name" title="Click to view details">${Utils.escapeHtml(item.component.name)}</span>
+        <span class="summary-preview-qty">${item.quantity}x</span>
+      </li>
+    `).join('');
+
+    const formattedWeight = totalWeight >= 1000 
+      ? `${(totalWeight / 1000).toFixed(2)} kg` 
+      : `${Math.round(totalWeight)} g`;
+
+    const summaryCard = document.createElement('div');
+    summaryCard.className = 'category-summary-card';
+    summaryCard.innerHTML = `
+      <div class="summary-preview-list-container" style="flex-grow: 1;">
+        <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.05em;">Top Items Preview</div>
+        <ul class="summary-preview-list">
+          ${previewListHtml}
+        </ul>
+        ${sortedList.length > 3 ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 8px; font-style: italic;">+ ${sortedList.length - 3} more item(s)</div>` : ''}
+      </div>
+      <div class="summary-metrics-row">
+        <span>Qty: <strong>${totalQty}</strong></span>
+        <span>Weight: <strong>${formattedWeight}</strong></span>
+        <span>Value: <strong>${Utils.formatCurrency(totalVal)}</strong></span>
+      </div>
+      <button class="btn-card-action">📋 See Full List</button>
+    `;
+
+    // Click on preview name opens the detail drawer for that item
+    summaryCard.querySelectorAll('.summary-preview-name').forEach((el, idx) => {
+      el.addEventListener('click', (e) => {
         e.stopPropagation();
-        const index = parseInt(e.target.dataset.index, 10);
-        removeComponentFromList(index);
+        openDetailDrawer(previewItems[idx]);
+      });
+    });
+
+    // Button click opens the full inventory modal
+    summaryCard.querySelector('.btn-card-action').addEventListener('click', () => {
+      openInventoryModal();
+    });
+
+    container.appendChild(summaryCard);
+  };
+
+  // --- INVENTORY MODAL LOGIC & TABLE RENDER ---
+  const openInventoryModal = () => {
+    inventoryModalBackdrop.classList.add('active');
+    inventoryModal.classList.add('open');
+    inventorySearchInput.value = '';
+    renderInventoryTable();
+    inventorySearchInput.focus();
+  };
+
+  const closeInventoryModal = () => {
+    inventoryModalBackdrop.classList.remove('active');
+    inventoryModal.classList.remove('open');
+  };
+
+  btnViewInventory.addEventListener('click', openInventoryModal);
+  inventoryModalClose.addEventListener('click', closeInventoryModal);
+  inventoryModalBackdrop.addEventListener('click', closeInventoryModal);
+
+  inventorySearchInput.addEventListener('input', () => {
+    renderInventoryTable();
+  });
+
+  const renderInventoryTable = () => {
+    inventoryTableBody.innerHTML = '';
+    const query = inventorySearchInput.value.trim().toLowerCase();
+
+    // Filter items based on search query
+    const filteredItems = currentList.map((item, index) => ({ ...item, originalIndex: index }))
+      .filter(item => {
+        if (!query) return true;
+        const name = item.component.name.toLowerCase();
+        const category = item.component.category.toLowerCase();
+        const subcategory = item.component.subcategory.toLowerCase();
+        const classification = item.component.classification.toLowerCase();
+        return name.includes(query) || 
+               category.includes(query) || 
+               subcategory.includes(query) || 
+               classification.includes(query);
       });
 
-      // Card click opens drawer details
-      card.addEventListener('click', () => {
+    if (filteredItems.length === 0) {
+      modalEmptyState.style.display = 'flex';
+      return;
+    }
+
+    modalEmptyState.style.display = 'none';
+
+    filteredItems.forEach(item => {
+      const row = document.createElement('tr');
+      
+      let badgeClass = 'table-badge-recycle';
+      if (item.component.classification === 'salvageable') badgeClass = 'table-badge-salvage';
+      if (item.component.classification === 'hazardous') badgeClass = 'table-badge-hazard';
+
+      const valText = item.component.estimatedValue > 0 
+        ? Utils.formatCurrency(item.component.estimatedValue * item.quantity) 
+        : '$0.00';
+
+      row.innerHTML = `
+        <td style="font-family: var(--font-mono); font-weight: 600;">${item.quantity}x</td>
+        <td>
+          <div style="font-weight: 600; color: var(--text-primary); cursor: pointer;" class="item-name-click">${Utils.escapeHtml(item.component.name)}</div>
+          <div style="font-size: 11px; color: var(--text-muted);">${Utils.escapeHtml(item.component.subcategory)}</div>
+        </td>
+        <td>${Utils.escapeHtml(item.component.category)}</td>
+        <td style="font-family: var(--font-mono); font-size: 11px;">${Utils.escapeHtml(item.component.package)}</td>
+        <td>
+          <span class="table-badge ${badgeClass}">${item.component.classification}</span>
+        </td>
+        <td style="text-align: right; font-family: var(--font-mono); font-weight: 600; color: var(--color-cyan);">${valText}</td>
+        <td style="text-align: center;">
+          <button class="btn-table-delete" title="Remove Item" data-index="${item.originalIndex}">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+          </button>
+        </td>
+      `;
+
+      // Handle item details drawer click
+      row.querySelector('.item-name-click').addEventListener('click', () => {
         openDetailDrawer(item);
       });
 
-      container.appendChild(card);
+      // Handle delete button click
+      row.querySelector('.btn-table-delete').addEventListener('click', (e) => {
+        const index = parseInt(e.currentTarget.dataset.index, 10);
+        removeComponentFromList(index);
+        renderInventoryTable(); // Re-render table after deletion
+      });
+
+      inventoryTableBody.appendChild(row);
     });
   };
 
